@@ -1,8 +1,16 @@
 #encoding:utf-8
 require 'open-uri'
 require 'digest'
+require 'base64'
 require 'rack'
 require 'net/http'
+require 'rest-client'
+require 'openssl'
+module OpenSSL
+  module SSL
+    VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
+  end
+end
 module UnionPay
   RESP_SUCCESS  = '00' #返回成功
   QUERY_SUCCESS = '0' #查询成功
@@ -14,10 +22,14 @@ module UnionPay
 
     def self.front_pay(param)
       new.instance_eval do
-        param['orderTime']         ||= Time.now.strftime('%Y%m%d%H%M%S')         #交易时间, YYYYmmhhddHHMMSS
-        param['orderCurrency']     ||= UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
-        param['transType']         ||= UnionPay::CONSUME
-        trans_type = param['transType']
+        param['txnTime']         ||= Time.now.strftime('%Y%m%d%H%M%S')         #交易时间, YYYYmmhhddHHMMSS
+        param['currencyCode']     ||= UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
+        param['txnType']         ||= UnionPay::CONSUME
+        param['txnSubType'] ||= '01'
+        param['bizType']  ||='000000'
+        param['channelType'] ||='07'
+        param['accessType'] ||='0'
+        trans_type = param['txnType']
         if [UnionPay::CONSUME, UnionPay::PRE_AUTH].include? trans_type
           @api_url = UnionPay.front_pay_url
           self.args = PayParamsEmpty.merge(PayParams).merge(param)
@@ -32,13 +44,13 @@ module UnionPay
 
     def self.back_pay(param)
       new.instance_eval do
-        param['orderTime']         ||= Time.now.strftime('%Y%m%d%H%M%S')         #交易时间, YYYYmmhhddHHMMSS
-        param['orderCurrency']     ||= UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
-        param['transType']         ||= UnionPay::REFUND
+        param['txnTime']         ||= Time.now.strftime('%Y%m%d%H%M%S')         #交易时间, YYYYmmhhddHHMMSS
+        param['currencyCode']     ||= UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
+        param['txnType']         ||= UnionPay::REFUND
         @api_url = UnionPay.back_pay_url
         self.args = PayParamsEmpty.merge(PayParams).merge(param)
         @param_check = PayParamsCheck
-        trans_type = param['transType']
+        trans_type = param['txnType']
         if [UnionPay::CONSUME, UnionPay::PRE_AUTH].include? trans_type
           if !self.args['cardNumber'] && !self.args['pan']
             raise('consume OR pre_auth transactions need cardNumber!')
@@ -53,25 +65,24 @@ module UnionPay
     def self.response(param)
       new.instance_eval do
         if param.is_a? String
-          pattern = /(?<=cupReserved=)(\{.*?\})/
-          cup_reserved = pattern.match(param).to_s
-          param.sub! pattern, ''
           param = Rack::Utils.parse_nested_query param
-          param['cupReserved'] = cup_reserved
         end
-        cup_reserved ||= (param['cupReserved'] ||= '')
-        arr_reserved = Rack::Utils.parse_nested_query cup_reserved[1..-2]
+        if param['respCode'] != "00"
+          return false
+        end
         if !param['signature'] || !param['signMethod']
-          raise('No signature Or signMethod set in notify data!')
+          return false
+        end      
+        sig=Base64.decode64 param.delete("signature").gsub(' ','+')
+        sign_str = param.sort.map do |k,v|
+          "#{k}=#{v}&"
+        end.join.chop
+        p "sig:#{sig}"
+        digest = OpenSSL::Digest::SHA1.new
+        if !UnionPay.public_key.verify digest, sig, Digest::SHA1.hexdigest(sign_str)
+          return false
         end
-
-        param.delete 'signMethod'
-        if param.delete('signature') != Service.sign(param)
-          raise('Bad signature returned!')
-        end
-        self.args = param.merge arr_reserved
-        self.args.delete 'cupReserved'
-        self
+        param
       end
     end
 
@@ -101,9 +112,10 @@ module UnionPay
 
     def self.sign(param)
       sign_str = param.sort.map do |k,v|
-        "#{k}=#{v}&" unless UnionPay::SignIgnoreParams.include? k
-      end.join
-      Digest::MD5.hexdigest(sign_str + Digest::MD5.hexdigest(UnionPay.security_key))
+        "#{k}=#{v}&"
+      end.join.chop
+      digest=OpenSSL::Digest::SHA1.new
+      ::Base64.encode64(UnionPay.security_key.sign digest, Digest::SHA1.hexdigest(sign_str)).gsub("\n","")
     end
 
     def form(options={})
@@ -122,7 +134,7 @@ module UnionPay
     end
 
     def post
-      Net::HTTP.post_form URI(@api_url), self.args
+      res = RestClient.post(@api_url, self.args)
     end
 
     def [](key)
@@ -140,11 +152,11 @@ module UnionPay
         arr_reserved << "#{k}=#{self.args.delete k}" if self.args.has_key? k
       end
 
-      if arr_reserved.any?
-        self.args['merReserved'] = arr_reserved.join('&')
-      else
-        self.args['merReserved'] ||= ''
-      end
+      # if arr_reserved.any?
+      #   self.args['merReserved'] = arr_reserved.join('&')
+      # else
+      #   self.args['merReserved'] ||= ''
+      # end
 
       @param_check.each do |k|
         raise("KEY [#{k}] not set in params given") unless self.args.has_key? k
@@ -152,8 +164,6 @@ module UnionPay
 
       # signature
       self.args['signature']  = Service.sign(self.args)
-      self.args['signMethod'] = UnionPay::Sign_method
-
       self
     end
   end

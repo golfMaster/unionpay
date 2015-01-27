@@ -5,21 +5,25 @@ require File.dirname(__FILE__) + '/unionpay/utils'
 
 module UnionPay
   class << self
-    attr_accessor :mer_id, :security_key, :mer_abbr, :environment
+    attr_accessor :mer_id, :security_key, :mer_abbr, :environment, :public_key
 
     def mer_id= v
       UnionPay::PayParams['merId'] = v
     end
 
-    def mer_abbr= v
-      UnionPay::PayParams['merAbbr'] = v
+    def verify_public_key_path= v
+      UnionPay.public_key=OpenSSL::X509::Certificate.new(File.read v).public_key
+    end
+
+    def sign_private_key_path= v
+      UnionPay.private_key
     end
 
     def environment= e
       case e
       ## 测试环境
       when :development
-        self.front_pay_url = "http://58.246.226.99/UpopWeb/api/Pay.action"
+        self.front_pay_url = "https://101.231.204.80:5000/gateway/api/appTransReq.do"
         self.back_pay_url = "http://58.246.226.99/UpopWeb/api/BSPay.action"
         self.query_url = "http://58.246.226.99/UpopWeb/api/Query.action"
       ## 预上线环境
@@ -35,5 +39,5 @@ module UnionPay
       end
     end
   end
-  self.environment= :production
+  self.environment= :development
 end
