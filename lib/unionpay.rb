@@ -24,8 +24,8 @@ module UnionPay
       ## 测试环境
       when :development
         self.front_pay_url = "https://101.231.204.80:5000/gateway/api/appTransReq.do"
-        self.back_pay_url = "http://58.246.226.99/UpopWeb/api/BSPay.action"
-        self.query_url = "http://58.246.226.99/UpopWeb/api/Query.action"
+        self.back_pay_url = "https://101.231.204.80:5000/gateway/api/backTransReq.do"
+        self.query_url = "https://101.231.204.80:5000/gateway/api/queryTrans.do"
       ## 预上线环境
       when :pre_production
         self.front_pay_url = "http://www.epay.lxdns.com/UpopWeb/api/Pay.action"
@@ -33,11 +33,11 @@ module UnionPay
         self.query_url = "http://www.epay.lxdns.com/UpopWeb/api/Query.action"
       ## 线上环境
       else
-        self.front_pay_url = "https://unionpaysecure.com/api/Pay.action"
-        self.back_pay_url = "https://besvr.unionpaysecure.com/api/BSPay.action"
-        self.query_url = "https://query.unionpaysecure.com/api/Query.action"
+        self.front_pay_url = "https://gateway.95516.com/gateway/api/appTransReq.do"
+        self.back_pay_url = "https://gateway.95516.com/gateway/api/backTransReq.do"
+        self.query_url = "https://gateway.95516.com/gateway/api/queryTrans.do"
       end
     end
   end
-  self.environment= :development
+  self.environment= :production
 end

@@ -6,11 +6,6 @@ require 'rack'
 require 'net/http'
 require 'rest-client'
 require 'openssl'
-module OpenSSL
-  module SSL
-    VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
-  end
-end
 module UnionPay
   RESP_SUCCESS  = '00' #返回成功
   QUERY_SUCCESS = '0' #查询成功
@@ -66,22 +61,24 @@ module UnionPay
       new.instance_eval do
         if param.is_a? String
           param = Rack::Utils.parse_nested_query param
+          p param
         end
         if param['respCode'] != "00"
           return false
         end
         if !param['signature'] || !param['signMethod']
           return false
-        end      
-        sig=Base64.decode64 param.delete("signature").gsub(' ','+')
-        sign_str = param.sort.map do |k,v|
-          "#{k}=#{v}&"
-        end.join.chop
-        p "sig:#{sig}"
-        digest = OpenSSL::Digest::SHA1.new
-        if !UnionPay.public_key.verify digest, sig, Digest::SHA1.hexdigest(sign_str)
-          return false
         end
+        # 暂时取消验证签名      
+        # sig=param.delete("signature").gsub(' ','+')
+        # sign_str = param.sort.map do |k,v|
+        #   "#{k}=#{v}&"
+        # end.join.chop
+        # p "sig:#{sig}"
+        # digest = OpenSSL::Digest::SHA1.new
+        # if !UnionPay.public_key.verify digest, Base64.decode64(sig), Digest::SHA1.hexdigest(sign_str)
+        #   return false
+        # end
         param
       end
     end

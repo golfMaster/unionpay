@@ -12,7 +12,7 @@ module UnionPay
   PayParams = {
     'version' => '5.0.0',
     'encoding' => 'UTF-8', #UTF-8, GBK等
-    'merId'   => '888888888', #商户填写
+    'merId'   => '898111448160394', #商户填写
     'signMethod' => "01",
   }
 
