@@ -69,16 +69,15 @@ module UnionPay
         if !param['signature'] || !param['signMethod']
           return false
         end
-        # 暂时取消验证签名      
-        # sig=param.delete("signature").gsub(' ','+')
-        # sign_str = param.sort.map do |k,v|
-        #   "#{k}=#{v}&"
-        # end.join.chop
-        # p "sig:#{sig}"
-        # digest = OpenSSL::Digest::SHA1.new
-        # if !UnionPay.public_key.verify digest, Base64.decode64(sig), Digest::SHA1.hexdigest(sign_str)
-        #   return false
-        # end
+        sig=param.delete("signature").gsub(' ','+')
+        sign_str = param.sort.map do |k,v|
+          "#{k}=#{v}&"
+        end.join.chop
+        p "sig:#{sig}"
+        digest = OpenSSL::Digest::SHA1.new
+        if !UnionPay.public_key.verify digest, Base64.decode64(sig), Digest::SHA1.hexdigest(sign_str)
+          return false
+        end
         param
       end
     end
