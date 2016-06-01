@@ -5,11 +5,7 @@ require File.dirname(__FILE__) + '/unionpay/utils'
 
 module UnionPay
   class << self
-    attr_accessor :mer_id, :security_key, :mer_abbr, :environment, :public_key
-
-    def mer_id= v
-      UnionPay::PayParams['merId'] = v
-    end
+    attr_accessor :mer_id, :cert_id, :private_key, :cer, :environment, :front_url, :back_url, :app_pay_url
 
     def verify_public_key_path= v
       UnionPay.public_key=OpenSSL::X509::Certificate.new(File.read v).public_key
@@ -33,9 +29,10 @@ module UnionPay
         self.query_url = "http://www.epay.lxdns.com/UpopWeb/api/Query.action"
       ## 线上环境
       else
-        self.front_pay_url = "https://gateway.95516.com/gateway/api/appTransReq.do"
+        self.front_pay_url = "https://gateway.95516.com/gateway/api/frontTransReq.do"
         self.back_pay_url = "https://gateway.95516.com/gateway/api/backTransReq.do"
         self.query_url = "https://gateway.95516.com/gateway/api/queryTrans.do"
+        self.app_pay_url = "https://gateway.95516.com/gateway/api/appTransReq.do"
       end
     end
   end

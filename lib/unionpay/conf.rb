@@ -12,15 +12,32 @@ module UnionPay
   PayParams = {
     'version' => '5.0.0',
     'encoding' => 'UTF-8', #UTF-8, GBK等
-    'merId'   => '898111448160394', #商户填写
+    'merId'   => '', #商户填写
     'signMethod' => "01",
+    'txnSubType' => "00",
+    'bizType' => "000201",
+    'channelType' => "07",
+    'accessType' => "0"
+  }
+
+  # 查询请求预定义字段
+  QueryParams = {
+    'version' => '5.0.0',
+    'encoding' => 'UTF-8', #UTF-8, GBK等
+    'merId'   => '', #商户填写
+    'signMethod' => "01",
+    'txnSubType' => "00",
+    'bizType' => "000201",
+    'channelType' => "07",
+    'accessType' => "0"
   }
 
   FRONT_PAY = 1
   BACK_PAY = 2
   RESPONSE = 3
-  QUERY = 4
-
+  
+  
+  QUERY = "00"
   CONSUME = "01"
   CONSUME_VOID = "31"
   PRE_AUTH = "02"
@@ -41,20 +58,47 @@ module UnionPay
   PayParamsCheck = [
     "version",
     "encoding",
+    "certId",
+    "txnType",
+    "txnSubType",
+    "bizType",
+    "channelType",
+    "accessType",
+    
+    "orderId",
+    "txnAmt"
+  ]
+  
+  # 退款请求必填字段检查
+  BackParamsCheck = [
+    "version",
+    "encoding",
     "txnType",
     "certId",
-    "txnSubType"
+    "txnSubType",
+    "bizType",
+    "channelType",
+    "accessType",
+    
+    "txnAmt",
+    "orderId"
   ]
 
   # 查询请求必填字段检查
   QueryParamsCheck = [
     "version",
-    "charset",
-    "transType",
+    "encoding",
+    "certId",
+    "signMethod",
+    "txnType",
+    "txnSubType",
+    "bizType",
+    
+    "accessType",
     "merId",
-    "orderNumber",
-    "orderTime",
-    "merReserved",
+    
+    "orderId",
+    "txnTime"
   ]
 
   # 商户保留域可能包含的字段

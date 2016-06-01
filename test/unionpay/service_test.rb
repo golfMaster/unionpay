@@ -1,31 +1,22 @@
+require 'minitest'
+require "minitest/autorun"
 require 'test_helper'
 
-class UnionPay::ServiceTest < Test::Unit::TestCase
-  def generate_form
-    param = {}
-    param['transType']     = UnionPay::CONSUME                         #交易类型，CONSUME or PRE_AUTH
-    param['orderAmount']   = 11000                                           #交易金额
-    param['orderNumber']   = '20131220151706'
-    param['customerIp']    = '127.0.0.1'
-    param['frontEndUrl']   = "http://www.example.com/sdk/utf8/front_notify.php"    #前台回调URL
-    param['backEndUrl']    = "http://www.example.com/sdk/utf8/back_notify.php"     #后台回调URL
-    param['orderTime']     = '20131220151706'
-    param['orderCurrency'] = UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
-    UnionPay::Service.front_pay(param)
+class UnionPay::ServiceTest < Minitest::Test
+  
+  def app_pay
+    now = Time.now.strftime('%Y%m%d%H%M%S')
+    UnionPay::Service.app_pay({'orderId' => now, 'txnTime' => now, 'txnAmt' => 100})
   end
 
-  def generate_back_pay_service
-    #交易类型 退货=REFUND 或 消费撤销=CONSUME_VOID, 如果原始交易是PRE_AUTH，那么后台接口也支持对应的
-    #  PRE_AUTH_VOID(预授权撤销), PRE_AUTH_COMPLETE(预授权完成), PRE_AUTH_VOID_COMPLETE(预授权完成撤销)
-    param = {}
-    param['transType']             = UnionPay::REFUND
-    param['origQid']               = '201110281442120195882'; #原交易返回的qid, 从数据库中获取
-    param['orderAmount']           = 11000;        #交易金额
-    param['orderNumber']           = '20131220151706'
-    param['customerIp']            = '127.0.0.1';  #用户IP
-    param['frontEndUrl']           = ""     #前台回调URL, 后台交易可为空
-    param['backEndUrl']            = "http://www.example.com/sdk/utf8/back_notify.php"    #后台回调URL
-    UnionPay::Service.back_pay(param)
+  def front_pay
+    now = Time.now.strftime('%Y%m%d%H%M%S')
+    UnionPay::Service.app_pay({'orderId' => now, 'txnTime' => now, 'txnAmt' => 100})
+  end
+
+  def back_pay
+    now = Time.now.strftime('%Y%m%d%H%M%S')
+    UnionPay::Service.back_pay({'orderId' => now, 'origQryId' => now, 'txnAmt' => 100})
   end
 
   def test_generate_form
