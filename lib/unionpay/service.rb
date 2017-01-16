@@ -92,8 +92,7 @@ module UnionPay
         param['txnTime']          ||= Time.now.strftime('%Y%m%d%H%M%S')         #交易时间, YYYYmmhhddHHMMSS
         param['currencyCode']     ||= UnionPay::CURRENCY_CNY                    #交易币种，CURRENCY_CNY=>人民币
         param['txnType']          ||= UnionPay::REFUND
-        param['certId']           ||= UnionPay.cert_id    
-        param['frontUrl']         ||= UnionPay.front_url
+        param['certId']           ||= UnionPay.cert_id
         param['backUrl']          ||= UnionPay.back_url  
         param['merId']            ||= UnionPay.mer_id
         
